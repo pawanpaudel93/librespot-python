@@ -1,10 +1,10 @@
-from librespot.audio.HaltListener import HaltListener
-from librespot.audio.storage import ChannelManager
-from librespot.standard.InputStream import InputStream
 import math
 import threading
 import time
 import typing
+
+from librespot.audio.HaltListener import HaltListener
+from librespot.standard.InputStream import InputStream
 
 
 class AbsChunkedInputStream(InputStream, HaltListener):
@@ -12,7 +12,7 @@ class AbsChunkedInputStream(InputStream, HaltListener):
     preload_chunk_retries: typing.Final[int] = 2
     max_chunk_tries: typing.Final[int] = 128
     wait_lock: threading.Condition = threading.Condition()
-    retries: list[int]
+    retries: typing.List[int]
     retry_on_chunk_error: bool
     chunk_exception = None
     wait_for_chunk: int = -1
@@ -22,7 +22,7 @@ class AbsChunkedInputStream(InputStream, HaltListener):
     _decoded_length: int = 0
 
     def __init__(self, retry_on_chunk_error: bool):
-        self.retries: typing.Final[list[int]] = [
+        self.retries: typing.Final[typing.List[int]] = [
             0 for _ in range(self.chunks())
         ]
         self.retry_on_chunk_error = retry_on_chunk_error
@@ -30,7 +30,7 @@ class AbsChunkedInputStream(InputStream, HaltListener):
     def is_closed(self) -> bool:
         return self.closed
 
-    def buffer(self) -> list[bytearray]:
+    def buffer(self) -> typing.List[bytearray]:
         raise NotImplementedError()
 
     def size(self) -> int:
@@ -64,8 +64,7 @@ class AbsChunkedInputStream(InputStream, HaltListener):
             raise IOError("Stream is closed!")
         self._pos = where
 
-        self.check_availability(int(self._pos / ChannelManager.CHUNK_SIZE),
-                                False, False)
+        self.check_availability(int(self._pos / (128 * 1024)), False, False)
 
     def skip(self, n: int) -> int:
         if n < 0:
@@ -78,15 +77,15 @@ class AbsChunkedInputStream(InputStream, HaltListener):
             k = n
         self._pos += k
 
-        chunk = int(self._pos / ChannelManager.CHUNK_SIZE)
+        chunk = int(self._pos / (128 * 1024))
         self.check_availability(chunk, False, False)
 
         return k
 
-    def requested_chunks(self) -> list[bool]:
+    def requested_chunks(self) -> typing.List[bool]:
         raise NotImplementedError()
 
-    def available_chunks(self) -> list[bool]:
+    def available_chunks(self) -> typing.List[bool]:
         raise NotImplementedError()
 
     def chunks(self) -> int:
@@ -112,8 +111,8 @@ class AbsChunkedInputStream(InputStream, HaltListener):
 
         for i in range(chunk + 1,
                        min(self.chunks() - 1, chunk + self.preload_ahead) + 1):
-            if self.requested_chunks(
-            )[i] and self.retries[i] < self.preload_chunk_retries:
+            if (self.requested_chunks()[i]
+                    and self.retries[i] < self.preload_chunk_retries):
                 self.request_chunk_from_stream(i)
                 self.requested_chunks()[chunk] = True
 
@@ -170,8 +169,8 @@ class AbsChunkedInputStream(InputStream, HaltListener):
 
         i = 0
         while True:
-            chunk = int(self._pos / ChannelManager.CHUNK_SIZE)
-            chunk_off = int(self._pos % ChannelManager.CHUNK_SIZE)
+            chunk = int(self._pos / (128 * 1024))
+            chunk_off = int(self._pos % (128 * 1024))
 
             self.check_availability(chunk, True, False)
 
@@ -191,10 +190,10 @@ class AbsChunkedInputStream(InputStream, HaltListener):
         if self._pos >= self.size():
             return -1
 
-        chunk = int(self._pos / ChannelManager.CHUNK_SIZE)
+        chunk = int(self._pos / (128 * 1024))
         self.check_availability(chunk, True, False)
 
-        b = self.buffer()[chunk][self._pos % ChannelManager.CHUNK_SIZE]
+        b = self.buffer()[chunk][self._pos % (128 * 1024)]
         self._pos = self._pos + 1
         return b
 
@@ -222,9 +221,6 @@ class AbsChunkedInputStream(InputStream, HaltListener):
         return self._decoded_length
 
     class ChunkException(IOError):
-        def __init__(self, cause):
-            super().__init__(cause)
-
         @staticmethod
         def from_stream_error(stream_error: int):
             return AbsChunkedInputStream.ChunkException(

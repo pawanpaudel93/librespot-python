@@ -29,34 +29,46 @@ from librespot.core import Session
 
 
 session = Session.Builder() \
-    .user_pass("<Username>", "<Password>") \
+    .user_pass("Username", "Password") \
     .create()
 
 aceess_token = session.tokens().get("playlist-read")
 ```
 ### Get Music Stream
 \*Currently, music streaming is supported, but it may cause unintended behavior.
+
 ```python
 from librespot.core import Session
+from librespot.metadata import TrackId
+from librespot.player.codecs import VorbisOnlyAudioQuality
+from librespot.audio.decoders import AudioQuality
 
-
-session = Session.Builder() \
-    .user_pass("<Username>", "<Password>") \
+session = Session.Builder()
+    .user_pass("Username", "Password")
     .create()
 
-track_id = TrackId.from_uri("<TrackID(ex, spotify:track:xxxxxxxxxxxxxxxxxxxxxx)>")
-
-stream = session.content_feeder().load(track_id, VorbisOnlyAudioQuality(AudioQuality.AudioQuality.VERY_HIGH), False, None)
-
-# stream.input_stream.stream().read() to get one byte of the music stream
+track_id = TrackId.from_uri("spotify:track:xxxxxxxxxxxxxxxxxxxxxx")
+stream = session.content_feeder().load(track_id, VorbisOnlyAudioQuality(AudioQuality.AudioQuality.VERY_HIGH), False,
+                                       None)
+# stream.input_stream.stream().read() to get one byte of the music stream.
+# ex: 1 (If there is no more voice data, -1 is received as the result.)
 ```
-Please read [this document](https://librespot-python.rtfd.io) for detailed specifications.
+Other uses are [examples](https://github.com/kokarare1212/librespot-python/tree/main/examples) or read [this document](https://librespot-python.rtfd.io) for detailed specifications.
+
+## Debug
+To display the debug information, you need to inject the following code at the top of the code.
+```python
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG)
+```
 ## Roadmap
 Please read [ROADMAP.md](https://github.com/kokarare1212/librespot-python/blob/main/ROADMAP.md).
 ## Contributing
 Pull requests are welcome.
 ## License
-Distributed under the Apache-2.0 License. See `LICENSE.txt` for more information.
+Distributed under the Apache-2.0 License. See [LICENSE.txt](https://github.com/kokarare1212/librespot-python/blob/main/LICENSE.txt) for more information.
 ## Related Projects
 * [Librespot](https://github.com/librespot-org/librespot) (Concept)
 * [Librespot-Java](https://github.com/librespot-org/librespot-java) (Core)

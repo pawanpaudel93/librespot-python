@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import typing
 
 from librespot.audio.format.AudioQualityPicker import AudioQualityPicker
 from librespot.audio.format.SuperAudioFormat import SuperAudioFormat
-from librespot.player.codecs.AudioQuality import AudioQuality
+from librespot.audio.decoders.AudioQuality import AudioQuality
 from librespot.proto import Metadata
 
 
@@ -16,7 +17,7 @@ class VorbisOnlyAudioQuality(AudioQualityPicker):
         self.preferred = preferred
 
     @staticmethod
-    def get_vorbis_file(files: list[Metadata.AudioFile]):
+    def get_vorbis_file(files: typing.List[Metadata.AudioFile]):
         for file in files:
             if hasattr(file, "format") and SuperAudioFormat.get(
                     file.format) == SuperAudioFormat.VORBIS:
@@ -24,8 +25,9 @@ class VorbisOnlyAudioQuality(AudioQualityPicker):
 
         return None
 
-    def get_file(self, files: list[Metadata.AudioFile]):
-        matches: list[Metadata.AudioFile] = self.preferred.get_matches(files)
+    def get_file(self, files: typing.List[Metadata.AudioFile]):
+        matches: typing.List[Metadata.AudioFile] = self.preferred.get_matches(
+            files)
         vorbis: Metadata.AudioFile = VorbisOnlyAudioQuality.get_vorbis_file(
             matches)
         if vorbis is None:

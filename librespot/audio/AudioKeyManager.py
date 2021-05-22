@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import struct
+
 from librespot.common import Utils
 from librespot.core import Session
 from librespot.core.PacketsReceiver import PacketsReceiver
@@ -7,6 +10,7 @@ from librespot.standard import BytesInputStream, ByteArrayOutputStream
 import logging
 import queue
 import threading
+import typing
 
 
 class AudioKeyManager(PacketsReceiver):
@@ -15,7 +19,7 @@ class AudioKeyManager(PacketsReceiver):
     _AUDIO_KEY_REQUEST_TIMEOUT: int = 20
     _seqHolder: int = 0
     _seqHolderLock: threading.Condition = threading.Condition()
-    _callbacks: dict[int, AudioKeyManager.Callback] = {}
+    _callbacks: typing.Dict[int, AudioKeyManager.Callback] = {}
     _session: Session = None
 
     def __init__(self, session: Session):
@@ -33,7 +37,7 @@ class AudioKeyManager(PacketsReceiver):
         out = ByteArrayOutputStream()
         out.write(buffer=bytearray(file_id))
         out.write(buffer=bytearray(gid))
-        out.write(buffer=bytearray(Utils.to_byte_array(seq)))
+        out.write(buffer=bytearray(struct.pack(">i", seq)))
         out.write(buffer=bytearray(self._ZERO_SHORT))
 
         self._session.send(Packet.Type.request_key, out.to_bytes())
@@ -107,5 +111,4 @@ class AudioKeyManager(PacketsReceiver):
                 return self.reference.get(block=False)
 
     class AesKeyException(IOError):
-        def __init__(self, ex):
-            super().__init__(ex)
+        pass
